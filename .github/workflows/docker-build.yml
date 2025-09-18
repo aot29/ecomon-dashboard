@@ -27,4 +27,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ghcr.io/akwamo-webservice-next-dashboard:latest
+          tags: ghcr.io/aot29/akwamo-webservice-next-dashboard:latest
