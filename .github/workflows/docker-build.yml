@@ -3,8 +3,6 @@ name: Build Docker image
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
   docker:
@@ -15,11 +13,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Build and (optionally) push the Docker image
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build and push the Docker image
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
-          push: false  # set to false if you only want to build
-          tags: akwamo-webservice-next-dashboard:latest
+          push: true
+          tags: ghcr.io/akwamo-webservice-next-dashboard:latest
