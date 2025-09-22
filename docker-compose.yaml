@@ -11,7 +11,6 @@ services:
       - HASURA_ADMIN_SECRET=${HASURA_ADMIN_SECRET}
       - HASURA_URL=${HASURA_URL}
     volumes:
-      - ./test:/srv/shiny-server/test
       - ./dashboard:/srv/shiny-server/dashboard
     restart: unless-stopped
 #    user: "${UID}:${GID}"
