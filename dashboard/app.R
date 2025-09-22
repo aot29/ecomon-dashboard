@@ -136,13 +136,13 @@ register_download_handler <- function(
 
   output$download_data <- downloadHandler(
     filename = function() {
-      cat("Generating filename for download...\n")
+      message("Generating filename for download...\n")
       filename <- sprintf("%s_%s_%s", site_name, year, species_name)
       sanitized_filename <- sanitize(filename)
       paste0(sanitized_filename, ".csv")
     },
     content = function(file) {
-      cat("Fetching download data...\n")
+      message("Fetching download data...\n")
       download_data <- get_download_data(
         species_id = species_id,
         model_id = model_id,
@@ -152,13 +152,13 @@ register_download_handler <- function(
       )
 
       if (is.null(download_data)) {
-        cat("No data returned by get_download_data.\n")
+        message("No data returned by get_download_data.\n")
         stop("No data available for download.")
       }
 
-      cat("Writing data to CSV file...\n")
+      message("Writing data to CSV file...\n")
       write.csv(download_data, file, row.names = TRUE)
-      cat("Download data written to file:", file, "\n")
+      message("Download data written to file:", file, "\n")
     }
   )
 }
@@ -173,35 +173,87 @@ server <- function(input, output, session) {
   # Reactive values for URL parameters
   url_threshold <- reactiveVal(NULL)
   url_site_ids <- reactiveVal(NULL)
-  url_site_name <- reactiveVal(NULL)
   url_species_id <- reactiveVal(NULL)
-  url_species_name <- reactiveVal(NULL)
   url_model_id <- reactiveVal(NULL)
-  url_lat <- reactiveVal(NULL)
-  url_lon <- reactiveVal(NULL)
   url_year <- reactiveVal(NULL)
+
+  # site info from Hasura
+  site_info <- reactiveVal(NULL)
+
+  # model info from Hasura
+  model_info <- reactiveVal(NULL)
+
+  # model info from Hasura
+  species_info <- reactiveVal(NULL)
 
   # Parse URL query parameters
   observe({
     parse_url_parameters(
       session,
-      url_threshold, url_site_ids, url_site_name, url_species_id, url_species_name,
-      url_model_id, url_lat, url_lon, url_year
+      url_threshold, url_site_ids, url_species_id,
+      url_model_id, url_year
     )
   })
 
-  # Register the download handler
+  # Fetch species information when species_id changes
+  observe({
+    if (!is.null(url_species_id())) {
+      tryCatch({
+        species_data <- get_species_info(url_species_id())
+        species_info(species_data)
+        # Update the UI input with the species name
+        updateTextInput(session, "canvas_species", value = species_data$name)
+      }, error = function(e) {
+        cat("Error loading species info:", e$message, "\n")
+        species_info(NULL)
+      })
+    }
+  })
+
+  # Fetch model information when model_id changes
+  observe({
+    if (!is.null(url_model_id())) {
+      tryCatch({
+        model_data <- get_model_info(url_model_id())
+        model_info(model_data)
+        # Update the UI input with the model name
+        updateTextInput(session, "canvas_classifier", value = model_data$name)
+      }, error = function(e) {
+        cat("Error loading model info:", e$message, "\n")
+        model_info(NULL)
+      })
+    }
+  })
+
+  # Fetch site information when site_ids change
+  observe({
+    if (!is.null(url_site_ids()) && length(url_site_ids()) > 0) {
+      tryCatch({
+        site_data <- get_site_info(url_site_ids()[1])
+        site_info(site_data)
+        # Update the UI input with the site name
+        updateTextInput(session, "canvas_site", value = site_data$name)
+      }, error = function(e) {
+        message("Error loading site info:", e$message, "\n")
+        site_info(NULL)
+      })
+    }
+  })
+
+  # Register the download handler (use site name from Hasura)
   observe({
     if (!is.null(url_species_id()) && !is.null(url_model_id()) &&
-          !is.null(url_site_ids()) && !is.null(url_year())) {
+          !is.null(url_site_ids()) && !is.null(url_year()) &&
+          !is.null(url_threshold()) && !is.null(site_info()) &&
+          !is.null(species_info())) {
       register_download_handler(
-        output, url_species_id(), url_species_name(), url_model_id(),
+        output, url_species_id(), species_info()$name, url_model_id(),
         url_site_ids()[1],  # Use the first site from the list
-        url_site_name(),
+        site_info()$name,  # Use site name from Hasura
         url_year(), url_threshold()
       )
     } else {
-      cat("Parameters are not set. Download handler not registered.\n")
+      message("Parameters are not set. Download handler not registered.\n")
     }
   })
 
@@ -209,7 +261,7 @@ server <- function(input, output, session) {
   heatmap_data <- reactive({
     if (is.null(url_species_id()) || is.null(url_model_id()) ||
           is.null(url_site_ids()) || is.null(url_year()) ||
-          is.null(url_lat()) || is.null(url_lon())) {
+          is.null(site_info())) {
       return(NULL)
     }
 
@@ -222,20 +274,22 @@ server <- function(input, output, session) {
         threshold = url_threshold()
       )
     }, error = function(e) {
-      print(paste("Error in load_and_process_data:", e$message))
+      message(paste("Error in load_and_process_data:", e$message))
       return(NULL)
     })
   })
 
   # Heatmap rendering
   observe({
-    sun_toggle <- !is.null(input$sun_toggle) && input$sun_toggle %% 2 == 1
-    twilight_toggle <- !is.null(input$twilight_toggle) && input$twilight_toggle %% 2 == 1
+    if (!is.null(site_info())) {
+      sun_toggle <- !is.null(input$sun_toggle) && input$sun_toggle %% 2 == 1
+      twilight_toggle <- !is.null(input$twilight_toggle) && input$twilight_toggle %% 2 == 1
 
-    render_heatmap(
-      input, output, session, heatmap_data, url_year, url_threshold,
-      sun_toggle, twilight_toggle, url_lat(), url_lon()
-    )
+      render_heatmap(
+        input, output, session, heatmap_data, url_year, url_threshold,
+        sun_toggle, twilight_toggle, site_info()$latitude, site_info()$longitude
+      )
+    }
   })
 
   # Acoustic activity text
@@ -249,7 +303,6 @@ server <- function(input, output, session) {
       threshold = threshold
     )
 
-    cat(count_above_threshold, "minutes with acoustic activity above threshold", threshold, "\n")
     tags$span(paste("No. of minutes with acoustic activity:", count_above_threshold))
   })
 
