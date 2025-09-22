@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: akwamo-webservice-next-dashboard:latest
+    image: ghcr.io/mfn-berlin/akwamo-webservice-next-dashboard:latest
     container_name: akwamo-webservice-next-dashboard
     ports:
       - "3838:3838"
