@@ -61,6 +61,7 @@ prepare_heatmap_data <- function(heatmap_data, threshold, year) {
 #   ggplot object: The ggplot object with the color scale added.
 # Helper function to add color scale
 add_color_scale <- function(plot, colormap, threshold) {
+  message("Adding color scale with colormap: ", colormap, " and threshold: ", threshold)
   # Ensure threshold is numeric and has a valid value
   if (is.null(threshold) || length(threshold) == 0) {
     threshold <- 0.5
@@ -117,34 +118,58 @@ add_color_scale <- function(plot, colormap, threshold) {
       legend.key.height = barheight  # Match the height of the labels to the color scale
     )
   } else {
-    # Check if colormap is valid, default to "plasma" if not
-    valid_colormaps <- c("viridis", "magma", "plasma", "inferno", "cividis")
+    # Check if colormap is valid, default if not
+    valid_colormaps <- c("rdbu", "plasma", "turbo", "viridis", "magma", "inferno", "cividis")
     if (!(colormap %in% valid_colormaps)) {
-      warning(paste("Invalid colormap:", colormap, "- using 'plasma' instead"))
-      colormap <- "plasma"
+      warning(paste("Invalid colormap:", colormap, "- using 'RdBu' instead"))
+      colormap <- "rdbu"
     }
-
-    plot + scale_fill_viridis_c(
-      name = "Confidence",
-      option = colormap,
-      na.value = "transparent",
-      limits = c(0, 1),
-      oob = scales::squish,  # Use squish directly without custom function
-      breaks = breaks,
-      labels = labels,
-      guide = guide_colorbar(
-        barheight = barheight,       # Set the height of the color scale
-        barwidth = unit(8, "pt"),   # Fixed width
-        label.hjust = 0,             # Align labels to left
-        label.vjust = 0.5,           # Center labels vertically
-        title.position = "top",      # Position title at top
-        title.hjust = 0.5,           # Center title
-        frame.colour = "black",      # Add border around legend
-        ticks.colour = "black"       # Add tick marks
+    if (colormap == "rdbu") {
+      message("Using RdBu colormap")
+      plot + scale_fill_gradientn(
+        name = "Confidence",
+        colors = rdbu,
+        na.value = "transparent",
+        limits = c(0, 1),
+        oob = scales::squish,  # Use squish directly without custom function
+        breaks = breaks,
+        labels = labels,
+        guide = guide_colorbar(
+          barheight = barheight,       # Set the height of the color scale
+          barwidth = unit(8, "pt"),   # Fixed width
+          label.hjust = 0,             # Align labels to left
+          label.vjust = 0.5,           # Center labels vertically
+          title.position = "top",      # Position title at top
+          title.hjust = 0.5,           # Center title
+          frame.colour = "black",      # Add border around legend
+          ticks.colour = "black"       # Add tick marks
+        )
+      ) + theme(
+        legend.key.height = barheight  # Match the height of the labels to the color scale
       )
-    ) + theme(
-      legend.key.height = barheight  # Match the height of the labels to the color scale
-    )
+    } else {
+      plot + scale_fill_viridis_c(
+        name = "Confidence",
+        option = colormap,
+        na.value = "transparent",
+        limits = c(0, 1),
+        oob = scales::squish,  # Use squish directly without custom function
+        breaks = breaks,
+        labels = labels,
+        guide = guide_colorbar(
+          barheight = barheight,       # Set the height of the color scale
+          barwidth = unit(8, "pt"),   # Fixed width
+          label.hjust = 0,             # Align labels to left
+          label.vjust = 0.5,           # Center labels vertically
+          title.position = "top",      # Position title at top
+          title.hjust = 0.5,           # Center title
+          frame.colour = "black",      # Add border around legend
+          ticks.colour = "black"       # Add tick marks
+        )
+      ) + theme(
+        legend.key.height = barheight  # Match the height of the labels to the color scale
+      )
+    }
   }
 }
 
@@ -266,7 +291,7 @@ render_heatmap <- function(
     }
 
     colormap <- input$colormap
-    if (is.null(colormap) || colormap == "") colormap <- "plasma"
+    if (is.null(colormap) || colormap == "") colormap <- "rdbu"
 
     # Get threshold with fallback
     threshold_val <- url_threshold()
