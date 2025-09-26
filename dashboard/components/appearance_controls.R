@@ -64,17 +64,40 @@ appearance_controls <- fluidRow(
               ),
               "Sunset & Sunrise"
             ),
-            class = "btn btn-outline-secondary sun-toggle-btn"
+            class = "btn btn-outline-secondary sun-toggle-btn",
+            value = 0
           ),
-          actionButton(
-            inputId = "twilight_toggle",
-            label = tagList(
-              tags$span(
-                class = "bi bi-cloud-sun twilight-toggle-icon"
+#          actionButton(
+#            inputId = "twilight_toggle",
+#            label = tagList(
+#              tags$span(
+#                class = "bi bi-cloud-moon twilight-toggle-icon"
+#              ),
+#              "Twilight"
+#            ),
+#            class = "btn btn-outline-secondary twilight-toggle-btn"
+#          ),
+          div(
+            style = "display: flex; gap: 0.5em; align-items: center;",
+            actionButton(
+              inputId = "twilight_toggle",
+              label = tagList(
+                tags$span(class = "bi bi-cloud-moon twilight-toggle-icon"),
+                "Twilight"
               ),
-              "Twilight"
+              class = "btn btn-outline-secondary twilight-toggle-btn"
             ),
-            class = "btn btn-outline-secondary twilight-toggle-btn"
+            selectInput(
+              inputId = "twilight_type",
+              label = NULL,
+              choices = c(
+                "Civil" = "civil",
+                "Nautical" = "nautical",
+                "Astronomical" = "astronomical"
+              ),
+              selected = "civil",
+              width = "120px"
+            )
           ),
           actionButton(
             inputId = "moonphase_toggle",
@@ -84,7 +107,8 @@ appearance_controls <- fluidRow(
               ),
               "Moonphase"
             ),
-            class = "btn btn-outline-secondary moonphase-toggle-btn"
+            class = "btn btn-outline-secondary moonphase-toggle-btn",
+            value = 1
           )
         )
       )

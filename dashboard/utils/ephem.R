@@ -40,7 +40,9 @@ compute_sun_times <- function(heatmap_long, lat, lon) {
   unique_dates <- unique(heatmap_long$Date)
   # Compute sunlight times for all dates
   sun_times <- getSunlightTimes(
-    date = unique_dates, lat = lat, lon = lon, keep = c("sunrise", "sunset", "dawn", "dusk")
+    date = unique_dates,
+    lat = lat, lon = lon,
+    keep = c("sunrise", "sunset", "dawn", "dusk", "nauticalDawn", "nauticalDusk", "nightEnd", "night")
   )
   sun_times
 }

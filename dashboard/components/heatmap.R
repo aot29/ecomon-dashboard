@@ -263,11 +263,25 @@ get_sunrise_sunset_lines <- function(heatmap_long, lat, lon) {
 #   lon (numeric): Longitude of the location.
 # Returns:
 #   data.frame: A data frame with dawn and dusk times for each date.
-get_dawn_dusk_lines <- function(heatmap_long, lat, lon) {
+get_dawn_dusk_lines <- function(heatmap_long, lat, lon, twilight_type) {
   sun_times <- compute_sun_times(heatmap_long, lat, lon)
-  dawn <- floor_time_to_10min(sun_times$dawn)
-  dusk <- floor_time_to_10min(sun_times$dusk)
+  message(paste("Computing dawn/dusk lines with twilight type:", twilight_type))
+  if (twilight_type == "civil") {
+    dawn <- sun_times$dawn
+    dusk <- sun_times$dusk
+  } else if (twilight_type == "nautical") {
+    dawn <- sun_times$nauticalDawn
+    dusk <- sun_times$nauticalDusk
+  } else if (twilight_type == "astronomical") {
+    dawn <- sun_times$nightEnd
+    dusk <- sun_times$night
+  }
+  dawn <- floor_time_to_10min(dawn)
+  dusk <- floor_time_to_10min(dusk)
   unique_dates <- unique(heatmap_long$Date)
+  message(head(data.frame(Date = rep(unique_dates, 2),
+             Time = c(dawn, dusk),
+             Type = rep(c("Dawn", "Dusk"), each = length(unique_dates))), 3))
   data.frame(
     Date = rep(unique_dates, 2),
     Time = c(dawn, dusk),
@@ -327,8 +341,11 @@ render_heatmap <- function(
     }
 
     # Add dawn/dusk lines if twilight_toggle is ON
+    twilight_type <- input$twilight_type
+    message(paste("Twilight type:", twilight_type))
     if (twilight_toggle) {
-      twilight_df <- get_dawn_dusk_lines(heatmap_long, lat, lon)
+      if (is.null(twilight_type) || twilight_type == "") twilight_type <- "civil"
+      twilight_df <- get_dawn_dusk_lines(heatmap_long, lat, lon, twilight_type)
       p <- p +
         geom_line(
           data = twilight_df,
