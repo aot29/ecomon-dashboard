@@ -70,3 +70,9 @@ floor_time_to_10min <- function(times) {
   })
   unlist(floored)
 }
+
+# Helper function to floor time to the nearest minute
+floor_time_to_1min <- function(times) {
+  t_floor <- as.POSIXct(floor(as.numeric(times) / 60) * 60, origin = "1970-01-01", tz = "Etc/GMT-1")
+  format(t_floor, "%H:%M:00")
+}

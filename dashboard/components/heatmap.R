@@ -25,8 +25,8 @@ prepare_heatmap_data <- function(heatmap_data, threshold, year) {
   # Create a complete grid of all possible times and dates
   all_times <- sprintf(
     "%02d:%02d:00",
-    rep(0:23, each = 6),
-    rep(seq(0, 50, by = 10), 24)
+    rep(0:23, each = 60),
+    rep(0:59, 24)
   )
 
   # Create sequence of all dates in the year
@@ -184,11 +184,11 @@ create_axis_scales <- function(year, heatmap_long = NULL) {
   hours <- 0:23
 
   # Create breaks for hourly intervals (00:00, 01:00, etc.)
-  hourly_breaks <- sprintf("%02d:00:00", hours)
-  hourly_labels <- sprintf("%02d:00", hours)
+  hourly_breaks <- sprintf("%02d:00:00", 0:23)
+  hourly_labels <- sprintf("%02d:00", 0:23)
 
   # Create all 10-minute intervals for the full range (but only show hourly ticks)
-  minutes_seq <- seq(0, 23 * 60 + 50, by = 10)  # 0 to 1430 minutes in 10-minute steps
+  minutes_seq <- seq(0, 23 * 60 + 59, by = 1)  # 0 to 1439 minutes in 1-min steps
   hours_all <- minutes_seq %/% 60
   minutes_all <- minutes_seq %% 60
   all_breaks <- sprintf("%02d:%02d:00", hours_all, minutes_all)
@@ -246,8 +246,8 @@ create_plot_theme <- function() {
 #   data.frame: A data frame with sunrise and sunset times for each date.
 get_sunrise_sunset_lines <- function(heatmap_long, lat, lon) {
   sun_times <- compute_sun_times(heatmap_long, lat, lon)
-  sunrise <- floor_time_to_10min(sun_times$sunrise)
-  sunset  <- floor_time_to_10min(sun_times$sunset)
+  sunrise <- floor_time_to_1min(sun_times$sunrise)
+  sunset  <- floor_time_to_1min(sun_times$sunset)
   unique_dates <- unique(heatmap_long$Date)
   data.frame(
     Date = rep(unique_dates, 2),
@@ -276,8 +276,8 @@ get_dawn_dusk_lines <- function(heatmap_long, lat, lon, twilight_type) {
     dawn <- sun_times$nightEnd
     dusk <- sun_times$night
   }
-  dawn <- floor_time_to_10min(dawn)
-  dusk <- floor_time_to_10min(dusk)
+  dawn <- floor_time_to_1min(dawn)
+  dusk <- floor_time_to_1min(dusk)
   unique_dates <- unique(heatmap_long$Date)
   message(head(data.frame(Date = rep(unique_dates, 2),
              Time = c(dawn, dusk),
