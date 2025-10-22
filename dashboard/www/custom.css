@@ -311,17 +311,6 @@ position: relative;
   border: none
 }
 
-/* Remove spinner controls from numericInput */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-/* Ensure the spinner controls are hidden in Firefox */
-input[type="number"] {
-  -moz-appearance: textfield;
-}
 
 /* Style for the Create Voucher and Download Data buttons */
 #download_data, #create_voucher {

@@ -67,16 +67,6 @@ appearance_controls <- fluidRow(
             class = "btn btn-outline-secondary sun-toggle-btn",
             value = 0
           ),
-#          actionButton(
-#            inputId = "twilight_toggle",
-#            label = tagList(
-#              tags$span(
-#                class = "bi bi-cloud-moon twilight-toggle-icon"
-#              ),
-#              "Twilight"
-#            ),
-#            class = "btn btn-outline-secondary twilight-toggle-btn"
-#          ),
           div(
             style = "display: flex; gap: 0.5em; align-items: center;",
             actionButton(
