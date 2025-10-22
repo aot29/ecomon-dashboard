@@ -395,7 +395,7 @@ render_heatmap <- function(
         "hoverClosestCartesian", "hoverCompareCartesian",
         "toggleSpikelines"
       ),
-      modeBarButtonsToAdd = c("zoomIn2d", "zoomOut2d", "pan2d", "resetScale2d"),
+      modeBarButtonsToAdd = c("zoom2d", "zoomIn2d", "zoomOut2d", "pan2d", "resetScale2d"),
       displaylogo = FALSE
     )
   })

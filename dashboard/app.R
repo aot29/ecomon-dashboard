@@ -203,8 +203,9 @@ server <- function(input, output, session) {
   observe({
     if (!is.null(url_threshold())) {
       threshold(url_threshold())
-      # Update the UI input to reflect the URL threshold
+      # Update the UI inputs to reflect the URL threshold
       updateNumericInput(session, "threshold", value = url_threshold())
+      updateNumericInput(session, "canvas_threshold", value = url_threshold())
     }
   })
 
@@ -215,6 +216,8 @@ server <- function(input, output, session) {
   observeEvent(threshold_debounced(), {
     if (!is.null(threshold_debounced()) && !is.na(threshold_debounced())) {
       threshold(threshold_debounced())
+      # Update canvas_threshold to keep them in sync
+      updateNumericInput(session, "canvas_threshold", value = threshold_debounced())
     }
   })
 

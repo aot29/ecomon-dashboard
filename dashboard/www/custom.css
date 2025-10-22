@@ -353,3 +353,15 @@ position: relative;
 .modebar-container .modebar-group {
   opacity: 1!important;
 }
+
+/* Hide spinners/scrollers for canvas_threshold input only */
+#canvas_threshold::-webkit-outer-spin-button,
+#canvas_threshold::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#canvas_threshold[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
