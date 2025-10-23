@@ -292,17 +292,31 @@ position: relative;
   width: 7em !important;
 }
 #threshold_container {
-  display: flex; align-items: center; margin-left: 2em; margin-right: 0.5em;
-}
-#threshold_container .form-group {
-  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Align to the left */
+  gap: 0.5em; /* Add spacing between elements */
+  margin-left: 0; /* Remove unnecessary left margin */
+  margin-right: 0; /* Remove unnecessary right margin */
 }
 
 .options-bar {
-  height: 48px;
-  padding: 0rem 1rem 0rem 1rem;
-  margin-bottom: 0rem!important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Ensure elements are spaced out */
+  height: 48px; /* Consistent height */
+  padding: 0 1rem; /* Add padding */
   width: 100%;
+}
+
+#threshold {
+  max-width: 7em !important;
+  min-width: 7em !important;
+  width: 7em !important;
+}
+
+#settings_btn {
+  margin-left: auto; /* Push the cog button to the far right */
 }
 
 .form-control:disabled, .form-control[readonly] {

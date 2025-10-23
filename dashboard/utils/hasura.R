@@ -10,12 +10,31 @@ hasura_headers <- c(
 #
 # Records table:
 # CREATE INDEX IF NOT EXISTS idx_records_site_datetime ON records(site_id, record_datetime);
-# CREATE INDEX IF NOT EXISTS idx_records_datetime_site ON records(record_datetime, site_id);
 #
-# Model inference results table:
-# CREATE INDEX IF NOT EXISTS idx_mir_model_label_confidence ON model_inference_results(model_id, label_id, confidence);
-# CREATE INDEX IF NOT EXISTS idx_mir_record_id ON model_inference_results(record_id);
+# Model inference results table - INDEX PRIORITY ANALYSIS:
+# 
+# CRITICAL (Primary query filter pattern):
 # CREATE INDEX IF NOT EXISTS idx_mir_compound ON model_inference_results(model_id, label_id, confidence, record_id);
+# - Covers ALL query patterns: model_id + label_id + confidence filtering with record_id access
+# - Supports confidence >= threshold queries efficiently with range scan
+# - Enables fast joins between records and model_inference_results
+# - Single index covers both aggregate queries (count) and detail queries
+#
+# SECONDARY (For record_id lookups):
+# CREATE INDEX IF NOT EXISTS idx_mir_record_id ON model_inference_results(record_id);  
+# - Needed when querying model_inference_results from records side (nested queries)
+# - Supports foreign key joins efficiently
+# - Smaller index for fast record-specific lookups
+#
+# REDUNDANT (Remove for better write performance):
+# -- CREATE INDEX IF NOT EXISTS idx_mir_model_label_confidence ON model_inference_results(model_id, label_id, confidence);
+# -- This index is completely covered by idx_mir_compound, so it can be dropped to improve INSERT/UPDATE performance
+#
+# QUERY PATTERN ANALYSIS:
+# 1. Threshold filtering: WHERE model_id = ? AND label_id = ? AND confidence >= ? → idx_mir_compound (optimal)
+# 2. Record joins: WHERE record_id = ? → idx_mir_record_id (optimal) 
+# 3. Combined queries: Both patterns above → Both indexes complement each other
+# 4. Aggregate distinct: Uses compound index for filtering + record_id for distinct operation
 
 # -----------------------------------------------------------------------------
 # HELPER FUNCTIONS
