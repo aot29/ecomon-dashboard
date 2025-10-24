@@ -48,10 +48,12 @@ if (!(tolower(default_colormap) %in% colormaps)) {
 }
 # Appearance controls UI component
 appearance_controls <- fluidRow(
+  style = "padding-top: 1em;",
   column(
     width = 12,
-    # Row for toggle buttons (sun, twilight, moonphase) side by side
+    # Row for toggle buttons (sun, twilight, moonphase)
     fluidRow(
+      style = "margin-bottom: 1em;",
       column(
         width = 12,
         div(
@@ -67,7 +69,15 @@ appearance_controls <- fluidRow(
             class = "btn btn-outline-secondary sun-toggle-btn",
             value = 0
           ),
+        )
+      )
+    ),
+    fluidRow(
+      style = "margin-bottom: 1em;",
+      column(
+        width = 12,
           div(
+            id = "twilight_container",
             style = "display: flex; gap: 0.5em; align-items: center;",
             actionButton(
               inputId = "twilight_toggle",
@@ -86,9 +96,16 @@ appearance_controls <- fluidRow(
                 "Astronomical" = "astronomical"
               ),
               selected = "civil",
-              width = "120px"
             )
           ),
+      )
+    ),
+    fluidRow(
+      style = "margin-bottom: 1em;",
+      column(
+        width = 12,
+        div(
+          style = "display: flex; gap: 0.5em;",
           actionButton(
             inputId = "moonphase_toggle",
             label = tagList(

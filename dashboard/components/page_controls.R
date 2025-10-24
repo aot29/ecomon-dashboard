@@ -1,3 +1,5 @@
+source("components/appearance_controls.R")
+
 # Threshold input
 threshold_input <- tags$div(
   id = "threshold_container",
@@ -56,21 +58,27 @@ settings_modal <- tags$div(
       ),
       tags$div(
         class = "modal-body",
-        tags$p("Settings content goes here...")
+        tabsetPanel(
+          id = "settings_tabs", # ID for the tab panel
+          type = "tabs",        # Use tabs style
+          tabPanel(
+            title = "Heatmap",  # Tab title
+            appearance_controls,
+            palette
+          )
+        )
       ),
       tags$div(
         class = "modal-footer",
-        tags$button(
-          type = "button",
-          class = "btn btn-secondary",
-          `data-bs-dismiss` = "modal",
-          "Close"
-        ),
-        tags$button(
-          type = "button",
-          class = "btn btn-primary",
-          id = "save_settings",
-          "Save changes"
+        # Add a row with Close and Reset buttons
+        tags$div(
+          style = "display: flex; justify-content: flex-end; width: 100%;",
+          tags$button(
+            type = "button",
+            class = "btn btn-secondary",
+            `data-bs-dismiss` = "modal",
+            "Close"
+          ),
         )
       )
     )

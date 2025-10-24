@@ -24,7 +24,6 @@
 
 source("components/page_controls.R")
 source("components/canvas_controls.R")
-source("components/appearance_controls.R")
 source("components/activity_controls.R")
 
 ui <- fluidPage(
@@ -72,12 +71,6 @@ ui <- fluidPage(
                     height = "400px"
                   )
                 ),
-                # heatmap options bar
-                tags$div(
-                  class = "options-bar d-flex align-items-center justify-content-between mb-3",
-                  appearance_controls,
-                  palette
-                )
               )
             )
           ),

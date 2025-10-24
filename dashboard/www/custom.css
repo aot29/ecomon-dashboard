@@ -27,7 +27,7 @@
 
 /* Toggle buttons (sun & moon) */
 .sun-toggle-btn,
-.moon-toggle-btn,
+.moonphase-toggle-btn,
 .twilight-toggle-btn {
   font-size: 0.8em;
   font-weight: 500;
@@ -35,13 +35,17 @@
   display: flex;
   align-items: center;
   gap: 0.25em;
-  border: none;
 }
+
+.sun-toggle-btn, .moonphase-toggle-btn,
+#twilight_container .form-group {
+  width: 100%;
+}
+
+
 #moonphase_toggle {
-  border: none;
   font-size: 0.8em;
   font-weight: 500;
-  margin-left: 3em;
 }
 .palette-dropdown-btn {
   font-size: 0.8em;
@@ -71,7 +75,6 @@
 #twilight_toggle{
 height: 30px;
   max-height: 30px;
-  margin-left: 2em;
 }
 /* Style the visible selectize input */
 #twilight_type-selectized {
@@ -83,7 +86,6 @@ height: 30px;
   height: 20px;
   font-size: small;
   margin-bottom: 0;
-  width: 150px;
 }
 
 /* Style the dropdown menu */
@@ -208,6 +210,14 @@ height: 30px;
   border: 1px solid #dee2e6;
   border-top: none;
   padding: 8px;
+}
+
+.modal-body .tab-content {
+  border: 1px solid #dee2e6;
+  border-top: none;
+}
+.modal-body .tab-content > .tab-pane > div {
+  border: none;
 }
 
 .nav-tabs > li > a, .nav-tabs > li > a:hover {
