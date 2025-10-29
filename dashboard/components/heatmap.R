@@ -353,17 +353,9 @@ render_heatmap_plot <- function(
   scales <- create_axis_scales(year)
   p <- p + scales$x_scale + scales$y_scale
 
-  # Create title with site name if provided
-  plot_title <- if (!is.null(site_name)) {
-    site_name
-  } else {
-    ""
-  }
-
   # Add labels and theme
   p <- p +
     labs(
-      title = plot_title,
       x = "Date",
       y = "CET (Winter Time)"
     ) +
