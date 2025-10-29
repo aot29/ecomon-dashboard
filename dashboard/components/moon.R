@@ -224,21 +224,30 @@ plot_moon_timeline <- function(
 }
 
 # Function to handle moon timeline rendering
-render_moon_timeline <- function(input, output, session, selected_year, moon_toggle) {
-  output$moon_timeline <- renderPlot({
-    # Use the year from canvas_year input which is set from URL parameter
-    year <- selected_year()
+#render_moon_timeline <- function(input, output, session, selected_year, moon_toggle) {
+#  output$moon_timeline <- renderPlot({
+#    # Use the year from canvas_year input which is set from URL parameter
+#    year <- selected_year()
+#
+#    start_date <- as.Date(sprintf("%d-01-01", year))
+#    end_date <- as.Date(sprintf("%d-12-31", year))
+#
+#    if (moon_toggle) {
+#      # Render the moon timeline plot
+#      plot_moon_timeline(start_date, end_date)
+#    } else {
+#      # Render an empty plot if moon_toggle is FALSE
+#      par(mar = c(0, 0, 0, 0))
+#      plot(NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE, xlab = "", ylab = "")
+#    }
+#  }, height = 30, width = 736)  # Dynamically set height
+#}
 
-    start_date <- as.Date(sprintf("%d-01-01", year))
-    end_date <- as.Date(sprintf("%d-12-31", year))
+# Render moon timeline for a given year
+render_moon_timeline <- function(year) {
+  start_date <- as.Date(sprintf("%d-01-01", year))
+  end_date <- as.Date(sprintf("%d-12-31", year))
 
-    if (moon_toggle) {
-      # Render the moon timeline plot
-      plot_moon_timeline(start_date, end_date)
-    } else {
-      # Render an empty plot if moon_toggle is FALSE
-      par(mar = c(0, 0, 0, 0))
-      plot(NA, xlim = c(0, 1), ylim = c(0, 1), axes = FALSE, xlab = "", ylab = "")
-    }
-  }, height = 30, width = 736)  # Dynamically set height
+  # Render the moon timeline plot
+  plot_moon_timeline(start_date, end_date)
 }
