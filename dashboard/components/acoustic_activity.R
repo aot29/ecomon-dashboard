@@ -112,6 +112,106 @@ render_acoustic_activity_plot <- function(
   )
 }
 
+get_min_max_dates <- function(diel_data) {
+  # Get the first and last date in the data
+  first_date <- min(as.Date(diel_data$Date))
+  last_date <- max(as.Date(diel_data$Date))
+  middle_date <- as.Date(first_date + (last_date - first_date) / 2)
+
+  # Log the dates
+  message("First date: ", first_date)
+  message("Last date: ", last_date)
+  message("Middle date: ", middle_date)
+
+  return(list(first_date = first_date, last_date = last_date, middle_date = middle_date))
+}
+
+calc_sunrise_sunset <- function(date_info, lat, lon) {
+  # Calculate sunrise and sunset for the middle date
+  sun_times <- compute_sun_times(data.frame(Date = date_info$middle_date), lat, lon)
+  sunrise_time <- as.POSIXct(sun_times$sunrise[1]) + 3600
+  sunset_time  <- as.POSIXct(sun_times$sunset[1]) + 3600
+
+  # Log the sunrise and sunset times
+  message("Sunrise time (+1h): ", sunrise_time)
+  message("Sunset time (+1h): ", sunset_time)
+
+  return(list(sunrise_time = sunrise_time, sunset_time = sunset_time))
+}
+
+calc_all_sun_times <- function(diel_data, lat, lon) {
+  # Get all unique dates from the data
+  all_dates <- sort(unique(as.Date(diel_data$Date)))
+  # Compute sunrise times for all dates on the plot
+  all_sun_times <- compute_sun_times(data.frame(Date = all_dates), lat, lon)
+  all_sunrise <- as.POSIXct(all_sun_times$sunrise) + 3600
+  # Extract time-of-day as "HH:MM"
+  all_sunrise_times <- format(all_sunrise, "%H:%M")
+  min_sunrise <- min(all_sunrise_times)
+  max_sunrise <- max(all_sunrise_times)
+  message("Earliest sunrise (+1h): ", min_sunrise)
+  message("Latest sunrise (+1h): ", max_sunrise)
+
+  return(list(all_sun_times = all_sun_times, min_sunrise = min_sunrise, max_sunrise = max_sunrise))
+}
+
+render_sunrise_sunset <- function(diel_data, aggregated_data, lat, lon, p) {
+  # Get the first and last date in the data
+  date_info <- get_min_max_dates(diel_data)
+  # Calculate sunrise and sunset for the middle date
+  if (!is.null(lat) && !is.null(lon)) {
+    sunrise_sunset_info <- calc_sunrise_sunset(date_info, lat, lon)
+    all_sun_times_info <- calc_all_sun_times(diel_data, lat, lon)
+  } else {
+    message("Latitude or longitude not provided. Cannot compute sunrise and sunset times.")
+  }
+
+  # Add vertical lines for sunrise and sunset if lat and lon are provided
+  if (!is.null(lat) && !is.null(lon)) {
+    # Format sunrise and sunset times to match the TimeOfDay format
+    sunrise_time_formatted <- format(as.POSIXct(sunrise_sunset_info$sunrise), "%H:%M")
+    sunset_time_formatted <- format(as.POSIXct(sunrise_sunset_info$sunset), "%H:%M")
+    # Log the formatted times and factor levels for debugging
+    message("Formatted sunrise time: ", sunrise_time_formatted)
+    message("Formatted sunset time: ", sunset_time_formatted)
+    message("Sample factor levels: ", head(levels(aggregated_data$TimeOfDay), 10))
+
+    # Find and log the index of sunrise and sunset in factor levels
+    idx_sunrise <- which(levels(aggregated_data$TimeOfDay) == sunrise_time_formatted)
+    idx_sunset  <- which(levels(aggregated_data$TimeOfDay) == sunset_time_formatted)
+    message("Index of sunrise (", sunrise_time_formatted, "): ", idx_sunrise)
+    message("Index of sunset (", sunset_time_formatted, "): ", idx_sunset)
+
+    # Add vertical lines at exact sunrise and sunset indices (numeric x)
+    p <- p +
+      geom_vline(xintercept = idx_sunrise, color = "#FDB813", linewidth = 0.5) +
+      geom_vline(xintercept = idx_sunset, color = "#FDB813", linewidth = 0.5)
+
+    # Draw uncertainty band for sunrise
+    idx_earliest_sunrise <- which(levels(aggregated_data$TimeOfDay) == all_sun_times_info$min_sunrise)  # nolint: line_length_linter.
+    idx_latest_sunrise   <- which(levels(aggregated_data$TimeOfDay) == all_sun_times_info$max_sunrise)  # nolint: line_length_linter.
+    message("Index of earliest sunrise (", all_sun_times_info$min_sunrise, "): ", idx_earliest_sunrise)  # nolint: line_length_linter.
+    message("Index of latest sunrise (", all_sun_times_info$max_sunrise, "): ", idx_latest_sunrise)
+    y_max <- max(aggregated_data$MinutesAboveThreshold, na.rm = TRUE)
+
+    p <- p +
+      geom_rect(
+        aes(
+          xmin = idx_earliest_sunrise,
+          xmax = idx_latest_sunrise,
+          ymin = 0,
+          ymax = y_max
+        ),
+        fill = "#FDB813",
+        alpha = 0.33,
+        inherit.aes = FALSE  # Prevents inheriting global aesthetics
+      ) +
+      # Remove padding at the top and bottom of the plot
+      scale_y_continuous(limits = c(0, y_max), expand = c(0, 0))
+  }
+}
+
+
 # Function to create a diel acoustic activity plot (returns plotly object)
 # Parameters:
 #   heatmap_result (data.frame): Raw heatmap data with columns "Time" and dates as columns.
@@ -148,30 +248,6 @@ render_diel_acoustic_activity_plot <- function(
         xaxis = list(title = "Time of Day"),
         yaxis = list(title = "Minutes Above Threshold")
       ))
-  }
-
-  # Get the first and last date in the data
-  first_date <- min(as.Date(diel_data$Date))
-  last_date <- max(as.Date(diel_data$Date))
-  middle_date <- as.Date(first_date + (last_date - first_date) / 2)
-
-  # Log the dates
-  message("First date: ", first_date)
-  message("Last date: ", last_date)
-  message("Middle date: ", middle_date)
-
-  # Calculate sunrise and sunset for the middle date
-  if (!is.null(lat) && !is.null(lon)) {
-    sun_times <- compute_sun_times(data.frame(Date = middle_date), lat, lon)
-    # Add one hour to sunrise and sunset times
-    sunrise_time <- as.POSIXct(sun_times$sunrise[1]) + 3600
-    sunset_time  <- as.POSIXct(sun_times$sunset[1]) + 3600
-
-    # Log the sunrise and sunset times
-    message("Sunrise time (+1h): ", sunrise_time)
-    message("Sunset time (+1h): ", sunset_time)
-  } else {
-    message("Latitude or longitude not provided. Cannot compute sunrise and sunset times.")
   }
 
   # Extract time of day from the Time column
@@ -230,29 +306,7 @@ render_diel_acoustic_activity_plot <- function(
       expand = c(0, 0)
     )
 
-  # Add vertical lines for sunrise and sunset if lat and lon are provided
-  if (!is.null(lat) && !is.null(lon)) {
-    # Format sunrise and sunset times to match the TimeOfDay format
-    sunrise_time_formatted <- format(as.POSIXct(sunrise_time), "%H:%M")
-    sunset_time_formatted <- format(as.POSIXct(sunset_time), "%H:%M")
-
-    # Log the formatted times and factor levels for debugging
-    message("Formatted sunrise time: ", sunrise_time_formatted)
-    message("Formatted sunset time: ", sunset_time_formatted)
-    message("Sample factor levels: ", head(levels(aggregated_data$TimeOfDay), 10))
-
-    # Find and log the index of sunrise and sunset in factor levels
-    idx_sunrise <- which(levels(aggregated_data$TimeOfDay) == sunrise_time_formatted)
-    idx_sunset  <- which(levels(aggregated_data$TimeOfDay) == sunset_time_formatted)
-    message("Index of sunrise (", sunrise_time_formatted, "): ", idx_sunrise)
-    message("Index of sunset (", sunset_time_formatted, "): ", idx_sunset)
-
-    # Add vertical lines at exact sunrise and sunset indices (numeric x)
-    p <- p +
-      geom_vline(xintercept = idx_sunrise, color = "#FDB813", linewidth = 0.5) +
-      geom_vline(xintercept = idx_sunset, color = "#FDB813", linewidth = 0.5)
-
-  }
+  p <- render_sunrise_sunset(diel_data, aggregated_data, lat, lon, p)
 
   # Convert to plotly
   plt <- plotly::ggplotly(p, tooltip = c("y", "text"))
