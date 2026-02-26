@@ -6,11 +6,12 @@
 #   site_name (character, optional): Name of the site.
 #   model_name (character, optional): Name of the model.
 #   species_name (character, optional): Name of the species.
+#   bin_size (numeric, optional): Size of bins for the histogram.
 # Returns:
 #   plotly object: An interactive histogram.
 render_histogram_plot <- function(
   heatmap_result, threshold_val, year,
-  site_name = NULL, model_name = NULL, species_name = NULL
+  site_name = NULL, model_name = NULL, species_name = NULL, bin_size = 0.01
 ) {
   if (is.null(heatmap_result)) {
     return(plotly::plot_ly() %>%
@@ -39,7 +40,8 @@ render_histogram_plot <- function(
   # Create base histogram using ggplot2
   p <- ggplot(data.frame(Value = histogram_data), aes(x = Value)) +
     geom_histogram(
-      bins = 50,
+      bins = 30,
+      binwidth = bin_size,
       fill = "#1f77b4",
       color = "black",
       alpha = 0.7

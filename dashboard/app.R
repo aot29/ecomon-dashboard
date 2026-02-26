@@ -38,6 +38,7 @@ source("utils/ephem.R")
 source("components/heatmap.R")
 source("components/histogram.R")
 source("utils/data_processing.R")
+source("components/acoustic_activity.R")
 source("utils/url.R")
 source("utils/hasura.R")
 source("utils/download_data.R")
@@ -375,6 +376,19 @@ server <- function(input, output, session) {
                   tags$div(
                     class = "plot-container",
                     tags$div(
+                      class = "bin-size-menu",
+                      style = "display: flex; align-items: center; gap: 10px; margin-bottom: 10px;",
+                      tags$span("Bin Size:", style = "font-weight: bold;"),
+                      numericInput(
+                        inputId = paste0("bin_size_", site_id),
+                        label = NULL,
+                        value = 0.01,
+                        min = 0.01,
+                        max = 1,
+                        step = 0.01
+                      )
+                    ),
+                    tags$div(
                       class = "hist-plot",
                       plotlyOutput(paste0("hist_", site_id), width = "900px", height = "400px")
                     )
@@ -388,10 +402,39 @@ server <- function(input, output, session) {
                   class = "tab-pane-content",
                   tags$div(
                     class = "plot-container",
-                    tags$h3("To do"),
+                    tags$div(
+                      class = "interval-menu",
+                      style = "display: flex; align-items: center; gap: 10px;",
+                      tags$span("Interval:", style = "font-weight: bold;"),
+                      selectInput(
+                        inputId = paste0("interval_", site_id),
+                        label = NULL,
+                        choices = list(
+                          "month" = "month",
+                          "10-day" = "10-day",
+                          "5-day" = "5-day",
+                          "daily" = "daily"
+                        ),
+                        selected = "month"
+                      )
+                    ),
                     tags$div(
                       class = "events-plot",
-                      plotOutput(paste0("events_", site_id), height = "410px")
+                      plotlyOutput(paste0("events_", site_id), width = "900px", height = "400px")
+                    )
+                  )
+                )
+              ),
+              # Diel acoustic activity tab
+              tabPanel(
+                title = "Diel acoustic activity",
+                tags$div(
+                  class = "tab-pane-content",
+                  tags$div(
+                    class = "plot-container",
+                    tags$div(
+                      class = "diel-plot",
+                      plotlyOutput(paste0("diel_", site_id), width = "900px", height = "400px")
                     )
                   )
                 )
@@ -478,6 +521,7 @@ server <- function(input, output, session) {
 
           # Render histogram
           histogram_output_id <- paste0("hist_", site_id)
+          bin_size_input_id <- paste0("bin_size_", site_id)
           output[[histogram_output_id]] <- renderPlotly({
             render_histogram_plot(
               site_data$data,
@@ -485,16 +529,42 @@ server <- function(input, output, session) {
               url_year(),
               site_data$site_info$name,
               model_info()$name,
+              species_info()$name,
+              bin_size = input[[bin_size_input_id]]
+            )
+          })
+
+          # Render acoustic activity
+          events_output_id <- paste0("events_", site_id)
+          interval_input_id <- paste0("interval_", site_id)
+          output[[events_output_id]] <- renderPlotly({
+            render_acoustic_activity_plot(
+              site_data$data,
+              threshold(),
+              url_year(),
+              input[[interval_input_id]],
+              site_data$site_info$name,
+              model_info()$name,
               species_info()$name
             )
           })
 
-          # Render moon timeline
-#          output[[moon_output_id]] <- renderPlot({
-#            render_moon_timeline(url_year())
-#          })
+          # Render diel acoustic activity
+          diel_output_id <- paste0("diel_", site_id)
+          output[[diel_output_id]] <- renderPlotly({
+            render_diel_acoustic_activity_plot(
+              site_data$data,
+              threshold(),
+              url_year(),
+              site_data$site_info$name,
+              model_info()$name,
+              species_info()$name,
+              lat = site_data$site_info$latitude,
+              lon = site_data$site_info$longitude
+            )
+          })
 
-          # Render moon timeline directly
+          # Render moon timeline
           output[[moon_output_id]] <- renderPlot({
             year <- url_year()
             moon_toggle <- !is.null(input$moonphase_toggle) && input$moonphase_toggle %% 2 == 1
