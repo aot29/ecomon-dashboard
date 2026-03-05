@@ -142,17 +142,28 @@ calc_sunrise_sunset <- function(date_info, lat, lon) {
 calc_all_sun_times <- function(diel_data, lat, lon) {
   # Get all unique dates from the data
   all_dates <- sort(unique(as.Date(diel_data$Date)))
-  # Compute sunrise times for all dates on the plot
+  # Compute sunrise and sunset times for all dates on the plot
   all_sun_times <- compute_sun_times(data.frame(Date = all_dates), lat, lon)
   all_sunrise <- as.POSIXct(all_sun_times$sunrise) + 3600
-  # Extract time-of-day as "HH:MM"
+  all_sunset <- as.POSIXct(all_sun_times$sunset) + 3600
+  
+  # Extract time-of-day as "HH:MM" for both sunrise and sunset
   all_sunrise_times <- format(all_sunrise, "%H:%M")
+  all_sunset_times <- format(all_sunset, "%H:%M")
+  
   min_sunrise <- min(all_sunrise_times)
   max_sunrise <- max(all_sunrise_times)
+  min_sunset <- min(all_sunset_times)
+  max_sunset <- max(all_sunset_times)
+  
   message("Earliest sunrise (+1h): ", min_sunrise)
   message("Latest sunrise (+1h): ", max_sunrise)
+  message("Earliest sunset (+1h): ", min_sunset)
+  message("Latest sunset (+1h): ", max_sunset)
 
-  return(list(all_sun_times = all_sun_times, min_sunrise = min_sunrise, max_sunrise = max_sunrise))
+  return(list(all_sun_times = all_sun_times, 
+              min_sunrise = min_sunrise, max_sunrise = max_sunrise,
+              min_sunset = min_sunset, max_sunset = max_sunset))
 }
 
 render_sunrise_sunset <- function(diel_data, aggregated_data, lat, lon, p) {
@@ -199,6 +210,25 @@ render_sunrise_sunset <- function(diel_data, aggregated_data, lat, lon, p) {
         aes(
           xmin = idx_earliest_sunrise,
           xmax = idx_latest_sunrise,
+          ymin = 0,
+          ymax = y_max
+        ),
+        fill = "#FDB813",
+        alpha = 0.33,
+        inherit.aes = FALSE  # Prevents inheriting global aesthetics
+      )
+    
+    # Draw uncertainty band for sunset
+    idx_earliest_sunset <- which(levels(aggregated_data$TimeOfDay) == all_sun_times_info$min_sunset)  # nolint: line_length_linter.
+    idx_latest_sunset   <- which(levels(aggregated_data$TimeOfDay) == all_sun_times_info$max_sunset)  # nolint: line_length_linter.
+    message("Index of earliest sunset (", all_sun_times_info$min_sunset, ": ", idx_earliest_sunset)  # nolint: line_length_linter.
+    message("Index of latest sunset (", all_sun_times_info$max_sunset, ": ", idx_latest_sunset)
+    
+    p <- p +
+      geom_rect(
+        aes(
+          xmin = idx_earliest_sunset,
+          xmax = idx_latest_sunset,
           ymin = 0,
           ymax = y_max
         ),

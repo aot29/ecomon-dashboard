@@ -282,7 +282,6 @@ server <- function(input, output, session) {
   # No tab tracking needed - Shiny will preserve tab state naturally
   # The key is to NOT use renderUI for parts that contain tabsetPanel
 
-
   # Render dynamic UI for multiple heatmaps
   output$site_panels <- renderUI({
     site_data_list <- site_list()  # Use site_list instead of heatmap_data_list
@@ -368,9 +367,9 @@ server <- function(input, output, session) {
                   )
                 )
               ),
-              # Histogram tab
+              # Bin tab
               tabPanel(
-                title = "Histogram",
+                title = "Bin size",
                 tags$div(
                   class = "tab-pane-content",
                   tags$div(
@@ -383,9 +382,35 @@ server <- function(input, output, session) {
                         inputId = paste0("bin_size_", site_id),
                         label = NULL,
                         value = 0.01,
-                        min = 0.01,
+                        min = 0.001,
                         max = 1,
-                        step = 0.01
+                        step = 0.001
+                      )
+                    ),
+                    tags$div(
+                      class = "distribution-selector",
+                      style = "display: flex; gap: 10px; margin-bottom: 10px;",
+                      tags$span("Distribution of", style = "font-weight: bold;"),
+                      radioButtons(
+                        inputId = paste0("distribution_type_", site_id),
+                        label = NULL,
+                        choices = list(
+                          "All values" = "all",
+                          "Minutes with activity" = "activity"
+                        ),
+                        selected = "activity",
+                        inline = TRUE
+                      ),
+                      tags$script(
+                        HTML(
+                          sprintf(
+                            "$(document).ready(function() {
+                              $('input[name=\"distribution_type_%s\"][value=\"all\"]').prop('disabled', true);
+                              $('input[name=\"distribution_type_%s\"][value=\"all\"]').parent().css({'color': 'gray', 'cursor': 'not-allowed'});
+                            });",
+                            site_id, site_id
+                          )
+                        )
                       )
                     ),
                     tags$div(
@@ -398,6 +423,7 @@ server <- function(input, output, session) {
               # Acoustic activity tab
               tabPanel(
                 title = "Acoustic activity",
+                value = paste0("acoustic_", site_id),
                 tags$div(
                   class = "tab-pane-content",
                   tags$div(
@@ -415,7 +441,7 @@ server <- function(input, output, session) {
                           "5-day" = "5-day",
                           "daily" = "daily"
                         ),
-                        selected = "month"
+                        selected = "daily"
                       )
                     ),
                     tags$div(
@@ -428,10 +454,17 @@ server <- function(input, output, session) {
               # Diel acoustic activity tab
               tabPanel(
                 title = "Diel acoustic activity",
+                value = paste0("diel_", site_id),
                 tags$div(
                   class = "tab-pane-content",
                   tags$div(
                     class = "plot-container",
+                    tags$div(
+                      class = "date-range-info",
+                      style = "display: flex; align-items: center; gap: 10px; margin-bottom: 10px;",
+                      tags$span("Date Range:", style = "font-weight: bold;"),
+                      textOutput(paste0("date_range_", site_id), inline = TRUE)
+                    ),
                     tags$div(
                       class = "diel-plot",
                       plotlyOutput(paste0("diel_", site_id), width = "900px", height = "400px")
@@ -522,6 +555,7 @@ server <- function(input, output, session) {
           # Render histogram
           histogram_output_id <- paste0("hist_", site_id)
           bin_size_input_id <- paste0("bin_size_", site_id)
+          distribution_input_id <- paste0("distribution_type_", site_id)
           output[[histogram_output_id]] <- renderPlotly({
             render_histogram_plot(
               site_data$data,
@@ -530,7 +564,8 @@ server <- function(input, output, session) {
               site_data$site_info$name,
               model_info()$name,
               species_info()$name,
-              bin_size = input[[bin_size_input_id]]
+              bin_size = input[[bin_size_input_id]],
+              distribution_type = input[[distribution_input_id]]
             )
           })
 
@@ -562,6 +597,12 @@ server <- function(input, output, session) {
               lat = site_data$site_info$latitude,
               lon = site_data$site_info$longitude
             )
+          })
+
+          # Render date range placeholder
+          date_range_output_id <- paste0("date_range_", site_id)
+          output[[date_range_output_id]] <- renderText({
+            "YYYY-MM-DD to YYYY-MM-DD"
           })
 
           # Render moon timeline
