@@ -2,11 +2,31 @@ name: Build Docker image
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, unit_test ]
   workflow_dispatch:
 
 jobs:
+  test:
+    if: github.ref == 'refs/heads/unit_test'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.3'
+
+      - name: Install dependencies
+        run: |
+          install.packages(c("testthat"))
+
+      - name: Run tests
+        run: testthat::test_dir("tests/testthat")
+
   docker:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
