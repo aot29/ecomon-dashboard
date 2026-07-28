@@ -22,7 +22,7 @@ jobs:
         run: Rscript -e 'install.packages(c("testthat"))'
 
       - name: Run tests
-        run: testthat::test_dir("tests/testthat")
+        run: Rscript -e 'testthat::test_dir("tests/testthat")'
 
   docker:
     if: github.ref == 'refs/heads/main'
