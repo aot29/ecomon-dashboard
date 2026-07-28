@@ -19,8 +19,7 @@ jobs:
           r-version: '4.3'
 
       - name: Install dependencies
-        run: |
-          install.packages(c("testthat"))
+        run: Rscript -e 'install.packages(c("testthat"))'
 
       - name: Run tests
         run: testthat::test_dir("tests/testthat")
