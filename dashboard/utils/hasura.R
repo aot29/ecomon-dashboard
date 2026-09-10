@@ -280,10 +280,10 @@ get_latest_threshold <- function(label_id, model_id) {
   message("First query returned data structure:", str(data))
 
   # If no non-NULL threshold found, try to get a NULL threshold
-  if (is.null(data) || !is.list(data) || !exists("thresholds", where = data) || 
+  if (is.null(data) || !is.list(data) || !exists("thresholds", where = data) ||
       is.null(data$thresholds) || length(data$thresholds) == 0) {
     query_null <- sprintf('\n      query GetLatestNullThreshold {\n        thresholds(\n          where: {\n            label_id: { _eq: %d }\n            model_id: { _eq: %d }\n            threshold_type: { _is_null: true }\n          }\n          order_by: { set_at: desc }\n          limit: 1\n        ) {\n          threshold\n          threshold_type\n        }\n      }\n    ', label_id, model_id)
-    
+
     data <- tryCatch({
       execute_graphql_query(query_null, "Latest null threshold")
     }, error = function(e) {
@@ -296,7 +296,7 @@ get_latest_threshold <- function(label_id, model_id) {
   if (is.list(data) && exists("thresholds", where = data) && !is.null(data$thresholds) && length(data$thresholds) > 0) {
     # With simplifyVector=TRUE, data$thresholds might be a data frame or a list
     first_elem <- data$thresholds
-    
+
     # If it's a data frame, get the first row
     if (is.data.frame(first_elem)) {
       first_elem <- first_elem[1, ]
@@ -304,27 +304,16 @@ get_latest_threshold <- function(label_id, model_id) {
       # If it's a list of objects (multiple rows), get the first one
       first_elem <- first_elem[[1]]
     }
-    
+
     # Check if the first element is a list/object with named fields
     if (is.list(first_elem) && length(first_elem) > 0 && !is.null(names(first_elem))) {
       # New format with threshold_type field
       threshold_type <- first_elem$threshold_type
-      is_final_val <- first_elem$is_final
       threshold_val <- first_elem$threshold
-      
-      # Handle NULL threshold_type based on is_final value
-      # If both are NULL, treat as preliminary for backwards compatibility
+
+      # Handle NULL threshold_type - treat as experimental for backwards compatibility
       if (is.null(threshold_type)) {
-        if (!is.null(is_final_val)) {
-          if (is_final_val) {
-            threshold_type <- "final"
-          } else {
-            threshold_type <- "preliminary"
-          }
-        } else {
-          # Both threshold_type and is_final are NULL - treat as preliminary
-          threshold_type <- "preliminary"
-        }
+        threshold_type <- "experimental"
       } else {
         # Normalize the threshold_type: trim whitespace and convert to lowercase
         threshold_type <- tolower(trimws(threshold_type))
@@ -359,7 +348,7 @@ get_latest_final_threshold <- function(label_id, model_id) {
 
   if (is.list(data) && exists("thresholds", where = data) && !is.null(data$thresholds) && length(data$thresholds) > 0) {
     first_elem <- data$thresholds[[1]]
-    
+
     if (is.list(first_elem) && length(first_elem) > 0 && !is.null(names(first_elem))) {
       threshold_type <- first_elem$threshold_type
       threshold_val <- first_elem$threshold
@@ -390,8 +379,7 @@ store_threshold <- function(label_id, model_id, threshold_value, threshold_type 
 store_final_threshold <- function(label_id, model_id, threshold_value) {
   cat("Storing final threshold for label_id:", label_id, "model_id:", model_id, "threshold:", threshold_value, "\n")
 
-  mutation <- sprintf('\n    mutation InsertFinalThreshold {\n      insert_thresholds_one(object: {\n        label_id: %d,\n        model_id: %d,\n        threshold: %f,\n        threshold_type: "final",
-        is_final: true\n      }) {\n        id\n        label_id\n        model_id\n        threshold\n        set_at\n        threshold_type\n      }\n    }\n  ', label_id, model_id, threshold_value)
+  mutation <- sprintf('\n    mutation InsertFinalThreshold {\n      insert_thresholds_one(object: {\n        label_id: %d,\n        model_id: %d,\n        threshold: %f,\n        threshold_type: "final"\n      }) {\n        id\n        label_id\n        model_id\n        threshold\n        set_at\n        threshold_type\n      }\n    }\n  ', label_id, model_id, threshold_value)
 
   data <- execute_graphql_query(mutation, "Store final threshold")
   return(data$insert_thresholds_one)
@@ -433,7 +421,7 @@ final_threshold_exists <- function(label_id, model_id) {
     return(FALSE)
   })
 
-  if (is.list(data) && exists("thresholds", where = data) && 
+  if (is.list(data) && exists("thresholds", where = data) &&
       !is.null(data$thresholds) && length(data$thresholds) > 0) {
     return(TRUE)
   }
@@ -445,16 +433,15 @@ reset_threshold_to_default <- function(label_id, model_id, threshold_value) {
   cat("Resetting threshold for label_id:", label_id, "model_id:", model_id, "to default:", threshold_value, "\n")
 
   # First try to update any existing record
-  mutation <- sprintf('\n    mutation UpdateThresholdToDefault {\n      update_thresholds(\n        where: { label_id: { _eq: %d }, model_id: { _eq: %d } },\n        _set: { threshold: %f, threshold_type: "default", is_final: false }\n      ) {\n        affected_rows\n        returning {\n          id\n          label_id\n          model_id\n          threshold\n          threshold_type\n          is_final\n        }\n      }\n    }\n  ', label_id, model_id, threshold_value)
+  mutation <- sprintf('\n    mutation UpdateThresholdToDefault {\n      update_thresholds(\n        where: { label_id: { _eq: %d }, model_id: { _eq: %d } },\n        _set: { threshold: %f, threshold_type: "default" }\n      ) {\n        affected_rows\n        returning {\n          id\n          label_id\n          model_id\n          threshold\n          threshold_type\n        }\n      }\n    }\n  ', label_id, model_id, threshold_value)
 
   data <- execute_graphql_query(mutation, "Reset threshold to default")
-  
+
   # If no rows were updated, insert a new default threshold record
   if (data$update_thresholds$affected_rows == 0) {
-    insert_mutation <- sprintf('\n      mutation InsertDefaultThreshold {\n        insert_thresholds_one(object: {\n          label_id: %d,\n          model_id: %d,\n          threshold: %f,\n          threshold_type: "default",
-          is_final: false\n        }) {\n          id\n          label_id\n          model_id\n          threshold\n          threshold_type\n          is_final\n        }\n      }\n    ', label_id, model_id, threshold_value)
+    insert_mutation <- sprintf('\n      mutation InsertDefaultThreshold {\n        insert_thresholds_one(object: {\n          label_id: %d,\n          model_id: %d,\n          threshold: %f,\n          threshold_type: "default"\n        }) {\n          id\n          label_id\n          model_id\n          threshold\n          threshold_type\n        }\n      }\n    ', label_id, model_id, threshold_value)
     data <- execute_graphql_query(insert_mutation, "Insert default threshold")
   }
-  
+
   return(data$update_thresholds)
 }
