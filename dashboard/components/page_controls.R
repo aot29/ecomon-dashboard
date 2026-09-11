@@ -44,7 +44,7 @@ threshold_input <- tags$div(
   id = "threshold_container",
   style = "position: absolute; top: 1em; gap: 0.5em; display: flex; align-items: center;",
   threshold_menu,
-  tags$label("Threshold", `for` = "threshold", style = "margin-top: 0em; white-space: nowrap; margin-right: 0.5em; font-size: small"),
+  tags$label("Threshold", `for` = "threshold", style = "margin-top: 0em; margin-right: 0.5em; font-size: small; max-width: 40%;"),
   uiOutput("threshold_input"),
   tags$small(
     "Range: 0.1 to 1.00",
