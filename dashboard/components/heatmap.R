@@ -377,7 +377,8 @@ render_heatmap_plot <- function(
 
 
   # Set white background for missing data (transparent NA values)
-  plt <- plt %>% plotly::layout(plot_bgcolor = "white")
+#  plt <- plt %>% plotly::layout(plot_bgcolor = "white")
+  plt <- plt %>% plotly::layout(plot_bgcolor = "lightgrey")
 
   # DOWNLOAD SVG BUTTON
   plotly::config(
